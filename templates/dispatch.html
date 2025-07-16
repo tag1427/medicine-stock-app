@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dispatch Medicine</title>
+</head>
+<body>
+    <h1>Dispatch Medicine</h1>
+
+    <form method="POST">
+        TR No.: <input type="text" name="tr_no" required><br><br>
+        Medicine Name: <input type="text" name="med_name" required><br><br>
+        Count: <input type="number" name="count" min="1" required><br><br>
+        <input type="submit" value="Dispatch">
+    </form>
+
+    <hr>
+
+    <h2>Dispatch History</h2>
+    <table border="1">
+        <tr>
+            <th>TR No.</th>
+            <th>Medicine</th>
+            <th>Count</th>
+            <th>Timestamp</th>
+            <th>Delete</th>
+        </tr>
+        {% for row in dispatch_log %}
+        <tr>
+            <td>{{ row["TR No."] }}</td>
+            <td>{{ row["Medicine Name"] }}</td>
+            <td>{{ row["Count"] }}</td>
+            <td>{{ row["Timestamp"] }}</td>
+            <td><a href="/delete_dispatch/{{ loop.index0 }}">Delete</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <a href="/">← Back to Stock</a>
+</body>
+</html>

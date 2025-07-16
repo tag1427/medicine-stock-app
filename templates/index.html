@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Medicine Stock</title>
+</head>
+<body>
+    <h1>Medicine Stock Manager</h1>
+    <p><a href="/dispatch">Go to Dispatch Medicine Tab</a></p>
+    <form method="POST" action="/add">
+        <input type="text" name="name" placeholder="Medicine Name" required>
+        <input type="number" name="quantity" placeholder="Quantity" required>
+        <input type="submit" value="Add">
+    </form>
+
+    <h2>Current Stock</h2>
+    <table border="1">
+        <tr>
+            <th>Name</th>
+            <th>Quantity</th>
+            <th>Update</th>
+            <th>Delete</th>
+        </tr>
+        {% for item in stock %}
+        <tr>
+            <td>{{ item['name'] }}</td>
+            <td>{{ item['quantity'] }}</td>
+            <td>
+                <form method="POST" action="/update/{{ item['name'] }}">
+                    <input type="number" name="quantity" value="{{ item['quantity'] }}" required>
+                    <input type="submit" value="Update">
+                </form>
+            </td>
+            <td><a href="/delete/{{ item['name'] }}">Delete</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
