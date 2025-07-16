@@ -97,4 +97,4 @@ def delete_dispatch(index):
     dispatch_sheet.delete_rows(index + 2)
     return redirect(url_for('dispatch'))
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=10000)
