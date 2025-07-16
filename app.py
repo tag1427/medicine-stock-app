@@ -6,7 +6,11 @@ app = Flask(__name__)
 
 # Setup Google Sheets
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("medicine-stock-465911-08672a59a867.json", scope)
+import os
+import json
+
+google_credentials = json.loads(os.environ['GOOGLE_CREDENTIALS'])
+creds = ServiceAccountCredentials.from_json_keyfile_dict(google_credentials, scope)
 client = gspread.authorize(creds)
 
 sheet = client.open("Medicine Stock").sheet1
