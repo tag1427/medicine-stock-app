@@ -3,9 +3,10 @@ import os, json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
+from gspread.exceptions import CellNotFound
 
 app = Flask(__name__)
-app.secret_key = '515253'  # Any random string
+app.secret_key = '515253'
 
 # Google Sheets Auth
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -13,7 +14,7 @@ google_credentials = json.loads(os.environ['GOOGLE_CREDENTIALS'])
 creds = ServiceAccountCredentials.from_json_keyfile_dict(google_credentials, scope)
 client = gspread.authorize(creds)
 
-# Helper functions to select correct sheet
+# Helpers
 def get_stock_sheet(clinic):
     return client.open("Medicine Stock").worksheet(f"{clinic}Stock")
 
@@ -31,13 +32,19 @@ def add_to_sheet(clinic, name, qty):
 
 def update_sheet(clinic, name, qty):
     sheet = get_stock_sheet(clinic)
-    cell = sheet.find(name)
-    sheet.update_cell(cell.row, 2, qty)
+    try:
+        cell = sheet.find(name)
+        sheet.update_cell(cell.row, 2, qty)
+    except CellNotFound:
+        add_to_sheet(clinic, name, qty)
 
 def delete_from_sheet(clinic, name):
     sheet = get_stock_sheet(clinic)
-    cell = sheet.find(name)
-    sheet.delete_rows(cell.row)
+    try:
+        cell = sheet.find(name)
+        sheet.delete_rows(cell.row)
+    except CellNotFound:
+        pass
 
 def log_dispatch(clinic, tr_no, med_name, count):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -50,7 +57,7 @@ def subtract_stock(clinic, med_name, count):
         current_qty = int(sheet.cell(cell.row, 2).value)
         new_qty = max(current_qty - count, 0)
         sheet.update_cell(cell.row, 2, new_qty)
-    except:
+    except CellNotFound:
         pass
 
 # Routes
@@ -59,7 +66,7 @@ def index():
     if 'user' not in session:
         return redirect(url_for('login'))
 
-    clinic = request.args.get('clinic', 'Boys')  # Default to Boys
+    clinic = request.args.get('clinic', 'Boys')
     stock = get_stock(clinic)
     return render_template('index.html', stock=stock, clinic=clinic)
 
@@ -68,15 +75,7 @@ def add():
     clinic = request.form['clinic']
     name = request.form['name']
     qty = int(request.form['quantity'])
-
-    try:
-        update_sheet(clinic, name, qty)
-    except CellNotFound:
-        try:
-            add_to_sheet(clinic, name, qty)
-        except Exception as e:
-            print("Error in add_to_sheet:", e)
-
+    update_sheet(clinic, name, qty)
     return redirect(url_for('index', clinic=clinic))
 
 @app.route('/update/<clinic>/<name>', methods=['POST'])
