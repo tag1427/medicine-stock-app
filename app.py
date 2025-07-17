@@ -3,7 +3,6 @@ import os, json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
-from gspread.exceptions import CellNotFound
 
 app = Flask(__name__)
 app.secret_key = '515253'  # Any random string
