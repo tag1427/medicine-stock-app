@@ -93,7 +93,7 @@ def update(clinic, name):
     update_sheet(clinic, name, qty)
     return redirect(url_for('index', clinic=clinic))
 
-@app.route('/delete/<clinic>/<name>')
+@app.route('/delete/<clinic>/<path:name>')
 def delete(clinic, name):
     delete_from_sheet(clinic, name)
     return redirect(url_for('index', clinic=clinic))
