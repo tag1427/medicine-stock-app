@@ -127,10 +127,26 @@ def dispatch():
 @app.route('/delete_dispatch/<clinic>/<int:index>')
 def delete_dispatch(clinic, index):
     sheet = get_dispatch_sheet(clinic)
+    data = sheet.get_all_values()
+
+    # Get row details (index + 1 for header, +1 for 1-based index)
+    row = data[index + 1]  # index 0 = header, index+1 = actual row
+    tr_no = row[0]
+    med_name = row[1]
+    count = int(row[2])
+
+    # Add back to stock
     try:
-        sheet.delete_rows(index + 2)  # 1 for header, 1 for 0-index
+        stock_sheet = get_stock_sheet(clinic)
+        cell = stock_sheet.find(med_name)
+        current_qty = int(stock_sheet.cell(cell.row, 2).value)
+        stock_sheet.update_cell(cell.row, 2, current_qty + count)
     except Exception as e:
-        print("Error deleting dispatch row:", e)
+        print(f"Error restoring stock during dispatch deletion: {e}")
+
+    # Delete the dispatch log entry
+    sheet.delete_rows(index + 2)
+
     return redirect(url_for('dispatch', clinic=clinic))
 
 @app.route('/login', methods=['GET', 'POST'])
