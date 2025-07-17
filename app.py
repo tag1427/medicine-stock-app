@@ -168,9 +168,6 @@ def login():
 def logout():
     session.pop('user', None)
     return redirect(url_for('login'))
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
     
 @app.route('/download_stock/<clinic>/<filetype>')
 def download_stock(clinic, filetype):
@@ -224,3 +221,8 @@ def download_dispatch(clinic, filetype):
             as_attachment=True,
             download_name=f'{clinic}_dispatch.xlsx'
         )
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
+    
