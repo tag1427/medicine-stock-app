@@ -19,7 +19,12 @@
 
     <form method="POST" action="{{ url_for('dispatch', clinic=clinic) }}">
         <input type="text" name="tr_no" placeholder="TR No." required style="background-color:white; color:black; padding: 5px;"><br><br>
-        <input type="text" name="med_name" placeholder="Medicine Name" required style="background-color:white; color:black; padding: 5px;"><br><br>
+            <select name="med_name" required style="background-color:white; color:black; padding: 5px;">
+                <option value="">-- Select Medicine --</option>
+                {% for item in stock %}
+                    <option value="{{ item['Name'] }}">{{ item['Name'] }}</option>
+                {% endfor %}
+            </select><br><br>
         <input type="number" name="count" placeholder="Count" required min="1" style="background-color:white; color:black; padding: 5px;"><br><br>
         <input type="submit" value="Dispatch">
     </form>

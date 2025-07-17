@@ -110,6 +110,8 @@ def dispatch():
 
     clinic = request.args.get('clinic', 'Boys')
 
+    stock = get_stock(clinic)  # Get stock list to populate dropdown
+
     if request.method == 'POST':
         tr_no = request.form['tr_no']
         med_name = request.form['med_name']
@@ -120,7 +122,7 @@ def dispatch():
         return redirect(url_for('dispatch', clinic=clinic))
 
     dispatch_log = get_dispatch_log(clinic)
-    return render_template('dispatch.html', dispatch_log=dispatch_log, clinic=clinic)
+    return render_template('dispatch.html', dispatch_log=dispatch_log, clinic=clinic, stock=stock)
 
 @app.route('/delete_dispatch/<clinic>/<int:index>')
 def delete_dispatch(clinic, index):
