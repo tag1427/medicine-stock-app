@@ -3,7 +3,6 @@ import os, json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
-from gspread.exceptions import CellNotFound
 
 app = Flask(__name__)
 app.secret_key = '515253'
@@ -75,7 +74,17 @@ def add():
     clinic = request.form['clinic']
     name = request.form['name']
     qty = int(request.form['quantity'])
-    update_sheet(clinic, name, qty)
+
+    try:
+        update_sheet(clinic, name, qty)
+    except Exception as e:
+        # If the medicine is not found, add a new row
+        print("Error during update, trying to add new row:", e)
+        try:
+            add_to_sheet(clinic, name, qty)
+        except Exception as e2:
+            print("Error in add_to_sheet:", e2)
+
     return redirect(url_for('index', clinic=clinic))
 
 @app.route('/update/<clinic>/<name>', methods=['POST'])
