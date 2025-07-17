@@ -45,7 +45,9 @@
                     <input type="submit" value="Update">
                 </form>
             </td>
-            <td><a href="{{ url_for('delete', clinic=clinic, name=item['name']) }}">Delete</a></td>
+            <td>
+                <a href="{{ url_for('delete', clinic=clinic, name=item['name']|urlencode) }}">Delete</a>
+            </td>
         </tr>
         {% endfor %}
     </table>
