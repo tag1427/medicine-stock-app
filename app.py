@@ -1,3 +1,6 @@
+import io
+import pandas as pd
+from flask import send_file
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import os, json
 import gspread
@@ -168,3 +171,56 @@ def logout():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
+    
+@app.route('/download_stock/<clinic>/<filetype>')
+def download_stock(clinic, filetype):
+    data = get_stock(clinic)
+    df = pd.DataFrame(data)
+
+    if filetype == 'csv':
+        output = io.StringIO()
+        df.to_csv(output, index=False)
+        output.seek(0)
+        return send_file(
+            io.BytesIO(output.getvalue().encode()),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'{clinic}_stock.csv'
+        )
+    elif filetype == 'excel':
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name=f"{clinic} Stock")
+        output.seek(0)
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'{clinic}_stock.xlsx'
+        )
+@app.route('/download_dispatch/<clinic>/<filetype>')
+def download_dispatch(clinic, filetype):
+    data = get_dispatch_log(clinic)
+    df = pd.DataFrame(data)
+
+    if filetype == 'csv':
+        output = io.StringIO()
+        df.to_csv(output, index=False)
+        output.seek(0)
+        return send_file(
+            io.BytesIO(output.getvalue().encode()),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'{clinic}_dispatch.csv'
+        )
+    elif filetype == 'excel':
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name=f"{clinic} Dispatch")
+        output.seek(0)
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'{clinic}_dispatch.xlsx'
+        )

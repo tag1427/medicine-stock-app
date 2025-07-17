@@ -25,6 +25,11 @@
     </form>
 
     <h2>Current Stock for {{ clinic }} Clinic</h2>
+    <p>
+        Download:
+        <a href="{{ url_for('download_stock', clinic=clinic, filetype='csv') }}">CSV</a> |
+        <a href="{{ url_for('download_stock', clinic=clinic, filetype='excel') }}">Excel</a>
+    </p>
     <table border="1">
         <tr>
             <th>Name</th>
