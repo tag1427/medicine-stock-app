@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+import os
+import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
-
+app.secret_key = '515253'  # Replace with any random word like 'abc123'
 # Setup Google Sheets
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 import os
@@ -35,6 +37,9 @@ def delete_from_sheet(name):
 
 @app.route('/')
 def index():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
     stock = get_stock()
     return render_template('index.html', stock=stock)
 
@@ -81,6 +86,9 @@ def subtract_stock(med_name, count):
         pass  # If medicine not found, do nothing (you can improve this)
 @app.route('/dispatch', methods=['GET', 'POST'])
 def dispatch():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
         tr_no = request.form['tr_no']
         med_name = request.form['med_name']
@@ -96,5 +104,23 @@ def dispatch():
 def delete_dispatch(index):
     dispatch_sheet.delete_rows(index + 2)
     return redirect(url_for('dispatch'))
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        # Change these to your preferred login credentials
+        if username == 'staff' and password == 'med786':
+            session['user'] = username
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid username or password')
+
+    return render_template('login.html')
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('login'))
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)

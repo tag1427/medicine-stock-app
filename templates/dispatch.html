@@ -4,6 +4,7 @@
     <title>Dispatch Medicine</title>
 </head>
 <body>
+    <p>Welcome, {{ session['user'] }} | <a href="{{ url_for('logout') }}">Logout</a></p>
     <h1>Dispatch Medicine</h1>
 
     <form method="POST">
