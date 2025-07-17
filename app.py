@@ -3,9 +3,10 @@ import os, json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
+from urllib.parse import unquote  # ✅ To decode %20 in names
 
 app = Flask(__name__)
-app.secret_key = '515253'
+app.secret_key = '515253'  # Any random string
 
 # Google Sheets Auth
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -34,18 +35,22 @@ def update_sheet(clinic, name, qty):
     try:
         cell = sheet.find(name)
         sheet.update_cell(cell.row, 2, qty)
-    except CellNotFound:
+    except Exception as e:
+        print("Item not found during update. Adding new instead:", e)
         add_to_sheet(clinic, name, qty)
 
 def delete_from_sheet(clinic, name):
     sheet = get_stock_sheet(clinic)
     try:
-        cell = sheet.find(name)
+        decoded_name = unquote(name)
+        cell = sheet.find(decoded_name)
         if cell:
             sheet.delete_rows(cell.row)
+        else:
+            print(f"[INFO] Item not found for deletion: {decoded_name}")
     except Exception as e:
         print(f"Error deleting '{name}' from {clinic}Stock:", e)
-        
+
 def log_dispatch(clinic, tr_no, med_name, count):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     get_dispatch_sheet(clinic).append_row([tr_no, med_name, count, timestamp])
@@ -57,8 +62,8 @@ def subtract_stock(clinic, med_name, count):
         current_qty = int(sheet.cell(cell.row, 2).value)
         new_qty = max(current_qty - count, 0)
         sheet.update_cell(cell.row, 2, new_qty)
-    except CellNotFound:
-        pass
+    except Exception as e:
+        print("Error during stock subtraction:", e)
 
 # Routes
 @app.route('/')
@@ -79,8 +84,7 @@ def add():
     try:
         update_sheet(clinic, name, qty)
     except Exception as e:
-        # If the medicine is not found, add a new row
-        print("Error during update, trying to add new row:", e)
+        print("Error in update. Trying add_to_sheet:", e)
         try:
             add_to_sheet(clinic, name, qty)
         except Exception as e2:
@@ -94,7 +98,7 @@ def update(clinic, name):
     update_sheet(clinic, name, qty)
     return redirect(url_for('index', clinic=clinic))
 
-@app.route('/delete/<clinic>/<path:name>')
+@app.route('/delete/<clinic>/<path:name>')  # ✅ Handles spaces in medicine names
 def delete(clinic, name):
     delete_from_sheet(clinic, name)
     return redirect(url_for('index', clinic=clinic))
@@ -121,7 +125,10 @@ def dispatch():
 @app.route('/delete_dispatch/<clinic>/<int:index>')
 def delete_dispatch(clinic, index):
     sheet = get_dispatch_sheet(clinic)
-    sheet.delete_rows(index + 2)
+    try:
+        sheet.delete_rows(index + 2)  # 1 for header, 1 for 0-index
+    except Exception as e:
+        print("Error deleting dispatch row:", e)
     return redirect(url_for('dispatch', clinic=clinic))
 
 @app.route('/login', methods=['GET', 'POST'])
