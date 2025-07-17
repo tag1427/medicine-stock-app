@@ -5,9 +5,22 @@
 </head>
 <body>
     <p>Welcome, {{ session['user'] }} | <a href="{{ url_for('logout') }}">Logout</a></p>
-    <h1>Dispatch Medicine</h1>
+    <h1>Dispatch Medicine - {{ clinic }} Clinic</h1>
 
+    <!-- Clinic Dropdown -->
+    <form method="get" action="{{ url_for('dispatch') }}">
+        <label for="clinic">Select Clinic:</label>
+        <select name="clinic" onchange="this.form.submit()">
+            <option value="Boys" {% if clinic == 'Boys' %}selected{% endif %}>Boys</option>
+            <option value="Girls" {% if clinic == 'Girls' %}selected{% endif %}>Girls</option>
+        </select>
+    </form>
+
+    <hr>
+
+    <!-- Dispatch Form -->
     <form method="POST">
+        <input type="hidden" name="clinic" value="{{ clinic }}">
         TR No.: <input type="text" name="tr_no" required><br><br>
         Medicine Name: <input type="text" name="med_name" required><br><br>
         Count: <input type="number" name="count" min="1" required><br><br>
@@ -16,7 +29,7 @@
 
     <hr>
 
-    <h2>Dispatch History</h2>
+    <h2>Dispatch History - {{ clinic }} Clinic</h2>
     <table border="1">
         <tr>
             <th>TR No.</th>
@@ -31,12 +44,14 @@
             <td>{{ row["Medicine Name"] }}</td>
             <td>{{ row["Count"] }}</td>
             <td>{{ row["Timestamp"] }}</td>
-            <td><a href="/delete_dispatch/{{ loop.index0 }}">Delete</a></td>
+            <td>
+                <a href="{{ url_for('delete_dispatch', index=loop.index0) }}?clinic={{ clinic }}">Delete</a>
+            </td>
         </tr>
         {% endfor %}
     </table>
 
     <br>
-    <a href="/">← Back to Stock</a>
+    <a href="{{ url_for('index', clinic=clinic) }}">← Back to Stock</a>
 </body>
 </html>

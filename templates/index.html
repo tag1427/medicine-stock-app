@@ -5,15 +5,28 @@
 </head>
 <body>
     <p>Welcome, {{ session['user'] }} | <a href="{{ url_for('logout') }}">Logout</a></p>
-    <h1>Medicine Stock Manager</h1>
-    <p><a href="/dispatch">Go to Dispatch Medicine Tab</a></p>
-    <form method="POST" action="/add">
+    <h1>Medicine Stock Manager - {{ clinic }} Clinic</h1>
+
+    <!-- Clinic Selection Dropdown -->
+    <form method="get" action="{{ url_for('index') }}">
+        <label for="clinic">Select Clinic:</label>
+        <select name="clinic" onchange="this.form.submit()">
+            <option value="Boys" {% if clinic == 'Boys' %}selected{% endif %}>Boys</option>
+            <option value="Girls" {% if clinic == 'Girls' %}selected{% endif %}>Girls</option>
+        </select>
+    </form>
+
+    <p><a href="{{ url_for('dispatch', clinic=clinic) }}">Go to Dispatch Medicine Tab</a></p>
+
+    <!-- Add Medicine Form -->
+    <form method="POST" action="{{ url_for('add') }}">
+        <input type="hidden" name="clinic" value="{{ clinic }}">
         <input type="text" name="name" placeholder="Medicine Name" required>
         <input type="number" name="quantity" placeholder="Quantity" required>
         <input type="submit" value="Add">
     </form>
 
-    <h2>Current Stock</h2>
+    <h2>Current Stock for {{ clinic }} Clinic</h2>
     <table border="1">
         <tr>
             <th>Name</th>
@@ -26,12 +39,15 @@
             <td>{{ item['name'] }}</td>
             <td>{{ item['quantity'] }}</td>
             <td>
-                <form method="POST" action="/update/{{ item['name'] }}">
+                <form method="POST" action="{{ url_for('update', name=item['name']) }}">
+                    <input type="hidden" name="clinic" value="{{ clinic }}">
                     <input type="number" name="quantity" value="{{ item['quantity'] }}" required>
                     <input type="submit" value="Update">
                 </form>
             </td>
-            <td><a href="/delete/{{ item['name'] }}">Delete</a></td>
+            <td>
+                <a href="{{ url_for('delete', name=item['name']) }}?clinic={{ clinic }}">Delete</a>
+            </td>
         </tr>
         {% endfor %}
     </table>
