@@ -21,8 +21,8 @@
     <!-- Add Medicine Form -->
     <form method="POST" action="{{ url_for('add') }}">
         <input type="hidden" name="clinic" value="{{ clinic }}">
-        <input type="text" name="name" placeholder="Medicine Name" required>
-        <input type="number" name="quantity" placeholder="Quantity" required>
+        <input type="text" name="name" placeholder="Medicine Name" required style="color: black; background-color: #f0f0f0; padding: 5px;">
+        <input type="number" name="quantity" placeholder="Quantity" required style="color: black; background-color: #f0f0f0; padding: 5px;">
         <input type="submit" value="Add">
     </form>
 
@@ -41,7 +41,7 @@
             <td>
                 <form method="POST" action="{{ url_for('update', clinic=clinic, name=item['name']) }}">
                     <input type="hidden" name="clinic" value="{{ clinic }}">
-                    <input type="number" name="quantity" value="{{ item['quantity'] }}" required>
+                    <input type="number" name="quantity" value="{{ item['quantity'] }}" required style="color: black; background-color: #f0f0f0; padding: 5px;">
                     <input type="submit" value="Update">
                 </form>
             </td>

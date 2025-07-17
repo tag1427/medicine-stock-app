@@ -19,7 +19,7 @@
     <hr>
 
     <!-- Dispatch Form -->
-    <form method="POST">
+    <form method="POST" action="{{ url_for('dispatch', clinic=clinic) }}">
         <input type="hidden" name="clinic" value="{{ clinic }}">
         TR No.: <input type="text" name="tr_no" required><br><br>
         Medicine Name: <input type="text" name="med_name" required><br><br>
@@ -45,7 +45,7 @@
             <td>{{ row["Count"] }}</td>
             <td>{{ row["Timestamp"] }}</td>
             <td>
-                <a href="{{ url_for('delete_dispatch', index=loop.index0) }}?clinic={{ clinic }}">Delete</a>
+                <a href="{{ url_for('delete_dispatch', clinic=clinic, index=loop.index0) }}">Delete</a>
             </td>
         </tr>
         {% endfor %}
