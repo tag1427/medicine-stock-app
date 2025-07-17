@@ -41,9 +41,10 @@ def delete_from_sheet(clinic, name):
     sheet = get_stock_sheet(clinic)
     try:
         cell = sheet.find(name)
-        sheet.delete_rows(cell.row)
-    except CellNotFound:
-        pass
+        if cell:
+            sheet.delete_rows(cell.row)
+    except Exception as e:
+        print(f"Error deleting medicine '{name}':", e)
 
 def log_dispatch(clinic, tr_no, med_name, count):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
