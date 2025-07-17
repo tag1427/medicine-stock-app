@@ -3,11 +3,7 @@ import os, json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
-<form method="POST" action="{{ url_for('dispatch', clinic=clinic) }}">
-    <input type="text" name="name" placeholder="Medicine Name" required style="background-color:white; color:black;">
-    <input type="number" name="quantity" placeholder="Quantity" required style="background-color:white; color:black;">
-    <!-- other form elements -->
-</form>
+
 app = Flask(__name__)
 app.secret_key = '515253'  # Any random string
 
