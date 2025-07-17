@@ -3,6 +3,7 @@ import os, json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
+from gspread.exceptions import CellNotFound
 
 app = Flask(__name__)
 app.secret_key = '515253'  # Any random string
@@ -71,8 +72,11 @@ def add():
 
     try:
         update_sheet(clinic, name, qty)
-    except:
-        add_to_sheet(clinic, name, qty)
+    except CellNotFound:
+        try:
+            add_to_sheet(clinic, name, qty)
+        except Exception as e:
+            print("Error in add_to_sheet:", e)
 
     return redirect(url_for('index', clinic=clinic))
 
