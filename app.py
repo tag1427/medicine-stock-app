@@ -222,6 +222,42 @@ def download_dispatch(clinic, filetype):
             download_name=f'{clinic}_dispatch.xlsx'
         )
 
+@app.route('/monthly_report/<clinic>/<filetype>')
+def monthly_report(clinic, filetype):
+    dispatch_log = get_dispatch_log(clinic)
+    df = pd.DataFrame(dispatch_log)
+
+    # Check if required columns exist
+    if not {'Medicine Name', 'Count', 'Timestamp'}.issubset(df.columns):
+        return "Dispatch log is missing required columns", 500
+
+    # Convert 'Timestamp' to datetime and extract month-year
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+    df = df.dropna(subset=['Timestamp'])  # remove bad dates
+    df['Month'] = df['Timestamp'].dt.strftime('%B %Y')  # e.g., July 2025
+
+    # Group by Medicine and Month
+    report_df = df.groupby(['Medicine Name', 'Month'])['Count'].sum().reset_index()
+
+    if filetype == 'csv':
+        output = report_df.to_csv(index=False)
+        response = make_response(output)
+        response.headers["Content-Disposition"] = f"attachment; filename={clinic}_monthly_report.csv"
+        response.headers["Content-Type"] = "text/csv"
+        return response
+
+    elif filetype == 'excel':
+        from io import BytesIO
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            report_df.to_excel(writer, index=False, sheet_name='Monthly Report')
+        response = make_response(output.getvalue())
+        response.headers["Content-Disposition"] = f"attachment; filename={clinic}_monthly_report.xlsx"
+        response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        return response
+
+    else:
+        return "Invalid file type", 400
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
