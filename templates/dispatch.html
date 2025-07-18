@@ -18,6 +18,15 @@
 
     <hr>
 
+    <!-- CSV Upload Form -->
+    <h3>📤 Upload Stock CSV</h3>
+    <form method="POST" action="{{ url_for('upload_csv', clinic=clinic) }}" enctype="multipart/form-data">
+        <input type="file" name="csv_file" accept=".csv" required>
+        <button type="submit">Upload CSV</button>
+    </form>
+
+    <hr>
+
     <!-- Dispatch Form -->
     <form method="POST" action="{{ url_for('dispatch', clinic=clinic) }}">
         <input type="text" name="tr_no" placeholder="TR No." required style="background-color:white; color:black; padding: 5px;"><br><br>
