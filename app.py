@@ -1,3 +1,6 @@
+import csv
+from io import StringIO
+from flask import request, redirect, url_for, render_template, flash
 import io
 import pandas as pd
 from flask import send_file
@@ -258,6 +261,37 @@ def monthly_report(clinic, filetype):
 
     else:
         return "Invalid file type", 400
+
+@app.route('/upload_stock', methods=['GET', 'POST'])
+def upload_stock():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        clinic = request.form['clinic']
+        file = request.files['file']
+
+        if not file or not file.filename.endswith('.csv'):
+            flash('Please upload a valid CSV file.')
+            return redirect(request.url)
+
+        content = file.stream.read().decode('utf-8')
+        csv_data = csv.DictReader(StringIO(content))
+
+        sheet = get_stock_sheet(clinic)
+        sheet.clear()
+        sheet.append_row(['Name', 'Quantity'])  # Add headers
+
+        for row in csv_data:
+            name = row.get('Name')
+            qty = row.get('Quantity')
+            if name and qty:
+                sheet.append_row([name, qty])
+
+        flash('Stock uploaded successfully.')
+        return redirect(url_for('index', clinic=clinic))
+
+    return render_template('upload_stock.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
