@@ -7,6 +7,7 @@
     <p>Welcome, {{ session['user'] }} | <a href="{{ url_for('logout') }}">Logout</a></p>
     <h1>Medicine Stock Manager - {{ clinic }} Clinic</h1>
 
+    <!-- Clinic Selector -->
     <form method="get" action="{{ url_for('index') }}">
         <label for="clinic">Select Clinic:</label>
         <select name="clinic" onchange="this.form.submit()">
@@ -17,6 +18,7 @@
 
     <p><a href="{{ url_for('dispatch', clinic=clinic) }}">Go to Dispatch Medicine Tab</a></p>
 
+    <!-- Add Medicine Form -->
     <form method="POST" action="{{ url_for('add') }}">
         <input type="hidden" name="clinic" value="{{ clinic }}">
         <input type="text" name="name" placeholder="Medicine Name" required style="color: black; background-color: white; padding: 5px;">
@@ -24,6 +26,18 @@
         <input type="submit" value="Add">
     </form>
 
+    <hr>
+
+    <!-- Upload CSV Form -->
+    <h3>📤 Upload CSV to Add Stock ({{ clinic }} Clinic)</h3>
+    <form method="POST" action="{{ url_for('upload_stock', clinic=clinic) }}" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".csv" required>
+        <input type="submit" value="Upload CSV">
+    </form>
+
+    <hr>
+
+    <!-- Stock Table -->
     <h2>Current Stock for {{ clinic }} Clinic</h2>
     <p>
         Download:
