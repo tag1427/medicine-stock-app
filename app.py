@@ -104,7 +104,7 @@ def update(clinic, name):
     update_sheet(clinic, name, qty)
     return redirect(url_for('index', clinic=clinic))
 
-@app.route('/delete/<clinic>/<path:name>')  # ✅ Handles spaces in medicine names
+@app.route('/delete/<clinic>/<path:name>')
 def delete(clinic, name):
     delete_from_sheet(clinic, name)
     return redirect(url_for('index', clinic=clinic))
@@ -115,8 +115,17 @@ def dispatch():
         return redirect(url_for('login'))
 
     clinic = request.args.get('clinic', 'Boys')
+    month = request.args.get('month')
+    year = request.args.get('year')
 
-    stock = get_stock(clinic)  # Get stock list to populate dropdown
+    stock = get_stock(clinic)
+    dispatch_log = get_dispatch_log(clinic)
+
+    if month and year:
+        dispatch_log = [
+            row for row in dispatch_log
+            if row['Timestamp'].startswith(f"{year}-{month.zfill(2)}")
+        ]
 
     if request.method == 'POST':
         tr_no = request.form['tr_no']
@@ -127,21 +136,17 @@ def dispatch():
         subtract_stock(clinic, med_name, count)
         return redirect(url_for('dispatch', clinic=clinic))
 
-    dispatch_log = get_dispatch_log(clinic)
     return render_template('dispatch.html', dispatch_log=dispatch_log, clinic=clinic, stock=stock)
 
 @app.route('/delete_dispatch/<clinic>/<int:index>')
 def delete_dispatch(clinic, index):
     sheet = get_dispatch_sheet(clinic)
     data = sheet.get_all_values()
-
-    # Get row details (index + 1 for header, +1 for 1-based index)
-    row = data[index + 1]  # index 0 = header, index+1 = actual row
+    row = data[index + 1]
     tr_no = row[0]
     med_name = row[1]
     count = int(row[2])
 
-    # Add back to stock
     try:
         stock_sheet = get_stock_sheet(clinic)
         cell = stock_sheet.find(med_name)
@@ -150,9 +155,7 @@ def delete_dispatch(clinic, index):
     except Exception as e:
         print(f"Error restoring stock during dispatch deletion: {e}")
 
-    # Delete the dispatch log entry
     sheet.delete_rows(index + 2)
-
     return redirect(url_for('dispatch', clinic=clinic))
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -171,7 +174,7 @@ def login():
 def logout():
     session.pop('user', None)
     return redirect(url_for('login'))
-    
+
 @app.route('/download_stock/<clinic>/<filetype>')
 def download_stock(clinic, filetype):
     data = get_stock(clinic)
@@ -198,6 +201,7 @@ def download_stock(clinic, filetype):
             as_attachment=True,
             download_name=f'{clinic}_stock.xlsx'
         )
+
 @app.route('/download_dispatch/<clinic>/<filetype>')
 def download_dispatch(clinic, filetype):
     data = get_dispatch_log(clinic)
@@ -230,16 +234,12 @@ def monthly_report(clinic, filetype):
     dispatch_log = get_dispatch_log(clinic)
     df = pd.DataFrame(dispatch_log)
 
-    # Check if required columns exist
     if not {'Medicine Name', 'Count', 'Timestamp'}.issubset(df.columns):
         return "Dispatch log is missing required columns", 500
 
-    # Convert 'Timestamp' to datetime and extract month-year
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
-    df = df.dropna(subset=['Timestamp'])  # remove bad dates
-    df['Month'] = df['Timestamp'].dt.strftime('%B %Y')  # e.g., July 2025
-
-    # Group by Medicine and Month
+    df = df.dropna(subset=['Timestamp'])
+    df['Month'] = df['Timestamp'].dt.strftime('%B %Y')
     report_df = df.groupby(['Medicine Name', 'Month'])['Count'].sum().reset_index()
 
     if filetype == 'csv':
@@ -280,7 +280,7 @@ def upload_stock():
 
         sheet = get_stock_sheet(clinic)
         sheet.clear()
-        sheet.append_row(['Name', 'Quantity'])  # Add headers
+        sheet.append_row(['Name', 'Quantity'])
 
         for row in csv_data:
             name = row.get('Name')
@@ -295,4 +295,3 @@ def upload_stock():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
-    
