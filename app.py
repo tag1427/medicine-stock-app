@@ -100,12 +100,20 @@ def add():
 
 @app.route('/update/<clinic>/<name>', methods=['POST'])
 def update(clinic, name):
+    if session.get('user') != 'admin':
+        flash("You are not authorized to update stock.")
+        return redirect(url_for('index', clinic=clinic))
+
     qty = int(request.form['quantity'])
     update_sheet(clinic, name, qty)
     return redirect(url_for('index', clinic=clinic))
 
 @app.route('/delete/<clinic>/<path:name>')
 def delete(clinic, name):
+    if session.get('user') != 'admin':
+        flash("You are not authorized to delete stock.")
+        return redirect(url_for('index', clinic=clinic))
+
     delete_from_sheet(clinic, name)
     return redirect(url_for('index', clinic=clinic))
 
@@ -163,8 +171,12 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        if username == 'staff' and password == 'med786':
-            session['user'] = username
+        
+        if username == 'admin' and password == 'mahlushifa515253':
+            session['user'] = 'admin'
+            return redirect(url_for('index'))
+        elif username == 'staff' and password == 'med786':
+            session['user'] = 'staff'
             return redirect(url_for('index'))
         else:
             flash('Invalid username or password')

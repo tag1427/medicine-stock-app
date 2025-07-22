@@ -48,20 +48,26 @@
         <tr>
             <th>Name</th>
             <th>Quantity</th>
-            <th>Update</th>
-            <th>Delete</th>
+            {% if session['user'] == 'admin' %}
+                <th>Update</th>
+                <th>Delete</th>
+            {% endif %}
         </tr>
         {% for item in stock %}
         <tr>
             <td>{{ item['Name'] }}</td>
             <td>{{ item['Quantity'] }}</td>
+            {% if session['user'] == 'admin' %}
             <td>
                 <form method="POST" action="{{ url_for('update', clinic=clinic, name=item['Name']) }}">
                     <input type="number" name="quantity" value="{{ item['Quantity'] }}" required style="color: black; background-color: #f0f0f0; padding: 5px;">
                     <input type="submit" value="Update">
                 </form>
             </td>
-            <td><a href="{{ url_for('delete', clinic=clinic, name=item['Name']|urlencode) }}">Delete</a></td>
+            <td>
+                <a href="{{ url_for('delete', clinic=clinic, name=item['Name']|urlencode) }}">Delete</a>
+            </td>
+            {% endif %}
         </tr>
         {% endfor %}
     </table>
