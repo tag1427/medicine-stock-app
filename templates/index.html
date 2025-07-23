@@ -54,7 +54,7 @@
             {% endif %}
         </tr>
         {% for item in stock %}
-        <tr>
+        <tr {% if item['Quantity']|int <= 10 %} style="background-color: #ffe6e6;" {% endif %}>
             <td>{{ item['Name'] }}</td>
             <td>{{ item['Quantity'] }}</td>
             {% if session['user'] == 'admin' %}
