@@ -160,7 +160,7 @@ def dispatch():
     flash(f"{count} units of '{med_name}' dispatched successfully.")
     return redirect(url_for('dispatch', clinic=clinic))
 
-    return render_template('dispatch.html', dispatch_log=dispatch_log, clinic=clinic, stock=stock)
+return render_template('dispatch.html', dispatch_log=dispatch_log, clinic=clinic, stock=stock)
 
 @app.route('/delete_dispatch/<clinic>/<int:index>')
 def delete_dispatch(clinic, index):
