@@ -1,15 +1,12 @@
 import csv
 from io import StringIO
-from flask import request, redirect, url_for, render_template, flash
-import io
-import pandas as pd
-from flask import send_file
-from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response
-import os, json
+from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response, send_file
+import os, json, io
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
-from urllib.parse import unquote  # ✅ To decode %20 in names
+from urllib.parse import unquote
+import pandas as pd
 
 app = Flask(__name__)
 app.secret_key = '515253'  # Any random string
@@ -135,7 +132,7 @@ def dispatch():
             if row['Timestamp'].startswith(f"{year}-{month.zfill(2)}")
         ]
 
-  if request.method == 'POST':
+    if request.method == 'POST':
         tr_no = request.form['tr_no']
         med_name = request.form['med_name']
         count = int(request.form['count'])
@@ -143,25 +140,24 @@ def dispatch():
         stock = get_stock(clinic)  # Refresh stock
         item = next((i for i in stock if i['Name'].strip().lower() == med_name.strip().lower()), None)
 
+        if item is None:
+            flash(f"Medicine '{med_name}' not found in stock.")
+            return redirect(url_for('dispatch', clinic=clinic))
 
-    if item is None:
-        flash(f"Medicine '{med_name}' not found in stock.")
+        if int(item['Quantity']) <= 0:
+            flash(f"Cannot dispatch '{med_name}'. Stock is zero.")
+            return redirect(url_for('dispatch', clinic=clinic))
+
+        if int(item['Quantity']) < count:
+            flash(f"Cannot dispatch {count} units of '{med_name}'. Only {item['Quantity']} in stock.")
+            return redirect(url_for('dispatch', clinic=clinic))
+
+        log_dispatch(clinic, tr_no, med_name, count)
+        subtract_stock(clinic, med_name, count)
+        flash(f"{count} units of '{med_name}' dispatched successfully.")
         return redirect(url_for('dispatch', clinic=clinic))
 
-    if int(item['Quantity']) <= 0:
-        flash(f"Cannot dispatch '{med_name}'. Stock is zero.")
-        return redirect(url_for('dispatch', clinic=clinic))
-
-    if int(item['Quantity']) < count:
-        flash(f"Cannot dispatch {count} units of '{med_name}'. Only {item['Quantity']} in stock.")
-        return redirect(url_for('dispatch', clinic=clinic))
-
-    log_dispatch(clinic, tr_no, med_name, count)
-    subtract_stock(clinic, med_name, count)
-    flash(f"{count} units of '{med_name}' dispatched successfully.")
-    return redirect(url_for('dispatch', clinic=clinic))
-
-return render_template('dispatch.html', dispatch_log=dispatch_log, clinic=clinic, stock=stock)
+    return render_template('dispatch.html', dispatch_log=dispatch_log, clinic=clinic, stock=stock)
 
 @app.route('/delete_dispatch/<clinic>/<int:index>')
 def delete_dispatch(clinic, index):
@@ -188,7 +184,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
+
         if username == 'admin' and password == 'mahlushifa515253':
             session['user'] = 'admin'
             return redirect(url_for('index'))
@@ -279,8 +275,7 @@ def monthly_report(clinic, filetype):
         return response
 
     elif filetype == 'excel':
-        from io import BytesIO
-        output = BytesIO()
+        output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             report_df.to_excel(writer, index=False, sheet_name='Monthly Report')
         response = make_response(output.getvalue())
