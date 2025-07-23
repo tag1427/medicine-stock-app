@@ -135,13 +135,14 @@ def dispatch():
             if row['Timestamp'].startswith(f"{year}-{month.zfill(2)}")
         ]
 
-   if request.method == 'POST':
-    tr_no = request.form['tr_no']
-    med_name = request.form['med_name']
-    count = int(request.form['count'])
+  if request.method == 'POST':
+        tr_no = request.form['tr_no']
+        med_name = request.form['med_name']
+        count = int(request.form['count'])
 
-    stock = get_stock(clinic)  # Refresh stock
-    item = next((i for i in stock if i['Name'].strip().lower() == med_name.strip().lower()), None)
+        stock = get_stock(clinic)  # Refresh stock
+        item = next((i for i in stock if i['Name'].strip().lower() == med_name.strip().lower()), None)
+
 
     if item is None:
         flash(f"Medicine '{med_name}' not found in stock.")
