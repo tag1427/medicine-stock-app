@@ -135,14 +135,30 @@ def dispatch():
             if row['Timestamp'].startswith(f"{year}-{month.zfill(2)}")
         ]
 
-    if request.method == 'POST':
-        tr_no = request.form['tr_no']
-        med_name = request.form['med_name']
-        count = int(request.form['count'])
+   if request.method == 'POST':
+    tr_no = request.form['tr_no']
+    med_name = request.form['med_name']
+    count = int(request.form['count'])
 
-        log_dispatch(clinic, tr_no, med_name, count)
-        subtract_stock(clinic, med_name, count)
+    stock = get_stock(clinic)  # Refresh stock
+    item = next((i for i in stock if i['Name'].strip().lower() == med_name.strip().lower()), None)
+
+    if item is None:
+        flash(f"Medicine '{med_name}' not found in stock.")
         return redirect(url_for('dispatch', clinic=clinic))
+
+    if int(item['Quantity']) <= 0:
+        flash(f"Cannot dispatch '{med_name}'. Stock is zero.")
+        return redirect(url_for('dispatch', clinic=clinic))
+
+    if int(item['Quantity']) < count:
+        flash(f"Cannot dispatch {count} units of '{med_name}'. Only {item['Quantity']} in stock.")
+        return redirect(url_for('dispatch', clinic=clinic))
+
+    log_dispatch(clinic, tr_no, med_name, count)
+    subtract_stock(clinic, med_name, count)
+    flash(f"{count} units of '{med_name}' dispatched successfully.")
+    return redirect(url_for('dispatch', clinic=clinic))
 
     return render_template('dispatch.html', dispatch_log=dispatch_log, clinic=clinic, stock=stock)
 
