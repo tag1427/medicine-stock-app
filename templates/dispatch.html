@@ -1,113 +1,207 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Dispatch Medicine</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f9fdfc;
+            color: #003d3d;
+        }
+        .btn-primary {
+            background-color: #009688;
+            border-color: #00796b;
+        }
+        .btn-primary:hover {
+            background-color: #00796b;
+        }
+        .table thead {
+            background-color: #009688;
+            color: white;
+        }
+        .page-link {
+            color: #009688;
+        }
+        .page-link.active, .active > .page-link {
+            background-color: #009688;
+            border-color: #009688;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <p>Welcome, {{ session['user'] }} | <a href="{{ url_for('logout') }}">Logout</a></p>
-    <h1>Dispatch Medicine - {{ clinic }} Clinic</h1>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Dispatch Medicine - {{ clinic }} Clinic</h3>
+        <p>Welcome, <strong>{{ session['user'] }}</strong> | <a href="{{ url_for('logout') }}">Logout</a></p>
+    </div>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages() %}
       {% if messages %}
-        <ul style="color: red;">
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-        </ul>
+        <div class="alert alert-warning">
+          {% for message in messages %}
+            <div>{{ message }}</div>
+          {% endfor %}
+        </div>
       {% endif %}
     {% endwith %}
 
     <!-- Clinic Selector -->
-    <form method="get" action="{{ url_for('dispatch') }}">
-        <label for="clinic">Select Clinic:</label>
-        <select name="clinic" onchange="this.form.submit()">
+    <form method="get" action="{{ url_for('dispatch') }}" class="mb-4">
+        <label for="clinic" class="form-label">Select Clinic:</label>
+        <select name="clinic" class="form-select w-auto d-inline" onchange="this.form.submit()">
             <option value="Boys" {% if clinic == 'Boys' %}selected{% endif %}>Boys</option>
             <option value="Girls" {% if clinic == 'Girls' %}selected{% endif %}>Girls</option>
         </select>
     </form>
 
-    <!-- 🔙 Back to Stock Link (moved up here) -->
-    <p><a href="{{ url_for('index', clinic=clinic) }}">← Back to Stock</a></p>
+    <!-- 🔙 Back to Stock -->
+    <p><a href="{{ url_for('index', clinic=clinic) }}" class="btn btn-outline-secondary btn-sm">← Back to Stock</a></p>
 
     <hr>
 
     <!-- Dispatch Form -->
-    <form method="POST" action="{{ url_for('dispatch', clinic=clinic) }}">
-        <input type="text" name="tr_no" placeholder="TR No." required style="background-color:white; color:black; padding: 5px;"><br><br>
-        
-        <label for="med_name">Select Medicine:</label><br>
-        <select name="med_name" required style="background-color:white; color:black; padding: 5px;">
-            <option value="">-- Select Medicine --</option>
-            {% for item in stock %}
-                <option value="{{ item['Name'] }}">{{ item['Name'] }}</option>
-            {% endfor %}
-        </select><br><br>
+    <form method="POST" action="{{ url_for('dispatch', clinic=clinic) }}" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <input type="text" name="tr_no" class="form-control" placeholder="TR No." required>
+        </div>
 
-        <input type="number" name="count" placeholder="Count" required min="1" style="background-color:white; color:black; padding: 5px;"><br><br>
-        <input type="submit" value="Dispatch">
+        <div class="col-md-4">
+            <select name="med_name" class="form-select" required>
+                <option value="">-- Select Medicine --</option>
+                {% for item in stock %}
+                    <option value="{{ item['Name'] }}">{{ item['Name'] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <input type="number" name="count" class="form-control" placeholder="Count" required min="1">
+        </div>
+
+        <div class="col-md-2">
+            <input type="submit" value="Dispatch" class="btn btn-primary w-100">
+        </div>
     </form>
 
     <hr>
 
-    <!-- Downloads Section -->
-    <h3>📥 Download Options</h3>
+    <!-- Download Options -->
+    <h5>📥 Download Options</h5>
     <p>
-        <strong>Full Dispatch Log:</strong><br>
-        <a href="{{ url_for('download_dispatch', clinic=clinic, filetype='csv') }}">Download CSV</a> |
-        <a href="{{ url_for('download_dispatch', clinic=clinic, filetype='excel') }}">Download Excel</a>
+        <strong>Full Dispatch Log:</strong>
+        <a href="{{ url_for('download_dispatch', clinic=clinic, filetype='csv') }}">CSV</a> |
+        <a href="{{ url_for('download_dispatch', clinic=clinic, filetype='excel') }}">Excel</a>
     </p>
     <p>
-        <strong>Monthly Summary Report:</strong><br>
-        <a href="{{ url_for('monthly_report', clinic=clinic, filetype='csv') }}">Download CSV</a> |
-        <a href="{{ url_for('monthly_report', clinic=clinic, filetype='excel') }}">Download Excel</a>
+        <strong>Monthly Summary Report:</strong>
+        <a href="{{ url_for('monthly_report', clinic=clinic, filetype='csv') }}">CSV</a> |
+        <a href="{{ url_for('monthly_report', clinic=clinic, filetype='excel') }}">Excel</a>
     </p>
 
     <hr>
 
-    <!-- 📅 Monthly Filter Form -->
-    <form method="get" action="{{ url_for('dispatch') }}">
+    <!-- Monthly Filter -->
+    <form method="get" action="{{ url_for('dispatch') }}" class="row g-3 mb-4">
         <input type="hidden" name="clinic" value="{{ clinic }}">
-        <label for="month">Filter by Month:</label>
-        <select name="month">
-            <option value="">All</option>
-            {% for m in range(1,13) %}
-                <option value="{{ '%02d' % m }}" {% if request.args.get('month') == '%02d' % m %}selected{% endif %}>{{ m }}</option>
-            {% endfor %}
-        </select>
-
-        <label for="year">Year:</label>
-        <select name="year">
-            {% for y in range(2024, 2031) %}
-                <option value="{{ y }}" {% if request.args.get('year') == y|string %}selected{% endif %}>{{ y }}</option>
-            {% endfor %}
-        </select>
-        <input type="submit" value="Apply Filter">
+        <div class="col-md-3">
+            <label for="month" class="form-label">Filter by Month:</label>
+            <select name="month" class="form-select">
+                <option value="">All</option>
+                {% for m in range(1,13) %}
+                    <option value="{{ '%02d' % m }}" {% if request.args.get('month') == '%02d' % m %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="year" class="form-label">Year:</label>
+            <select name="year" class="form-select">
+                {% for y in range(2024, 2031) %}
+                    <option value="{{ y }}" {% if request.args.get('year') == y|string %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <input type="submit" value="Apply Filter" class="btn btn-secondary">
+        </div>
     </form>
 
     <hr>
 
     <!-- Dispatch Table -->
-    <h2>Dispatch History - {{ clinic }} Clinic</h2>
-    <table border="1">
-        <tr>
-            <th>TR No.</th>
-            <th>Medicine</th>
-            <th>Count</th>
-            <th>Timestamp</th>
-            <th>Delete</th>
-        </tr>
-        {% for row in dispatch_log %}
-        <tr>
-            <td>{{ row["TR No."] }}</td>
-            <td>{{ row["Medicine Name"] }}</td>
-            <td>{{ row["Count"] }}</td>
-            <td>{{ row["Timestamp"] }}</td>
-            <td>
-                <a href="{{ url_for('delete_dispatch', clinic=clinic, index=loop.index0) }}">Delete</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+    <h5>📋 Dispatch History - {{ clinic }} Clinic</h5>
+    <div class="table-responsive">
+        <table id="dispatchTable" class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>TR No.</th>
+                    <th>Medicine</th>
+                    <th>Count</th>
+                    <th>Timestamp</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in dispatch_log %}
+                <tr>
+                    <td>{{ row["TR No."] }}</td>
+                    <td>{{ row["Medicine Name"] }}</td>
+                    <td>{{ row["Count"] }}</td>
+                    <td>{{ row["Timestamp"] }}</td>
+                    <td>
+                        <a href="{{ url_for('delete_dispatch', clinic=clinic, index=loop.index0) }}" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination Controls -->
+        <nav>
+            <ul class="pagination justify-content-center" id="pagination"></ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+    const rowsPerPage = 10;
+    const table = document.getElementById("dispatchTable");
+    const tbody = table.querySelector("tbody");
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+    const pagination = document.getElementById("pagination");
+
+    function showPage(page) {
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        rows.forEach((row, index) => {
+            row.style.display = (index >= start && index < end) ? "" : "none";
+        });
+
+        renderPagination(page);
+    }
+
+    function renderPagination(activePage) {
+        pagination.innerHTML = "";
+        const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement("li");
+            li.className = "page-item" + (i === activePage ? " active" : "");
+            li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+            li.addEventListener("click", (e) => {
+                e.preventDefault();
+                showPage(i);
+            });
+            pagination.appendChild(li);
+        }
+    }
+
+    showPage(1); // Initial page
+</script>
+
 </body>
 </html>

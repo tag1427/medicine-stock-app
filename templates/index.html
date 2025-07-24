@@ -1,75 +1,125 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Medicine Stock</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f7fcfb;
+            color: #004d4d;
+        }
+        .btn-primary {
+            background-color: #009688;
+            border-color: #00796b;
+        }
+        .btn-primary:hover {
+            background-color: #00796b;
+        }
+        .table thead {
+            background-color: #009688;
+            color: white;
+        }
+        .low-stock {
+            background-color: #ffe6e6 !important;
+        }
+    </style>
 </head>
 <body>
-    <p>Welcome, {{ session['user'] }} | <a href="{{ url_for('logout') }}">Logout</a></p>
-    <h1>Medicine Stock Manager - {{ clinic }} Clinic</h1>
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Medicine Stock Manager - {{ clinic }} Clinic</h3>
+        <p>Welcome, <strong>{{ session['user'] }}</strong> | <a href="{{ url_for('logout') }}">Logout</a></p>
+    </div>
 
     <!-- Clinic Selector -->
-    <form method="get" action="{{ url_for('index') }}">
-        <label for="clinic">Select Clinic:</label>
-        <select name="clinic" onchange="this.form.submit()">
+    <form method="get" action="{{ url_for('index') }}" class="mb-4">
+        <label for="clinic" class="form-label">Select Clinic:</label>
+        <select name="clinic" class="form-select w-auto d-inline" onchange="this.form.submit()">
             <option value="Boys" {% if clinic == 'Boys' %}selected{% endif %}>Boys</option>
             <option value="Girls" {% if clinic == 'Girls' %}selected{% endif %}>Girls</option>
         </select>
     </form>
 
-    <p><a href="{{ url_for('dispatch', clinic=clinic) }}">Go to Dispatch Medicine Tab</a></p>
+    <!-- Navigation -->
+    <p><a href="{{ url_for('dispatch', clinic=clinic) }}" class="btn btn-outline-secondary btn-sm">Go to Dispatch Medicine Tab</a></p>
+
+    <hr>
 
     <!-- Add Medicine Form -->
-    <form method="POST" action="{{ url_for('add') }}">
+    <form method="POST" action="{{ url_for('add') }}" class="row g-3 mb-4">
         <input type="hidden" name="clinic" value="{{ clinic }}">
-        <input type="text" name="name" placeholder="Medicine Name" required style="color: black; background-color: white; padding: 5px;">
-        <input type="number" name="quantity" placeholder="Quantity" required style="color: black; background-color: white; padding: 5px;">
-        <input type="submit" value="Add">
+        <div class="col-md-4">
+            <input type="text" name="name" class="form-control" placeholder="Medicine Name" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" name="quantity" class="form-control" placeholder="Quantity" required>
+        </div>
+        <div class="col-md-2">
+            <input type="submit" value="Add" class="btn btn-primary w-100">
+        </div>
     </form>
-
-    <hr>
 
     <!-- Upload CSV Form -->
-    <h3>📤 Upload CSV to Add Stock ({{ clinic }} Clinic)</h3>
-    <form method="POST" action="{{ url_for('upload_stock', clinic=clinic) }}" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".csv" required>
-        <input type="submit" value="Upload CSV">
-    </form>
+    <div class="mb-4">
+        <h5>📤 Upload CSV to Add Stock ({{ clinic }} Clinic)</h5>
+        <form method="POST" action="{{ url_for('upload_stock', clinic=clinic) }}" enctype="multipart/form-data" class="row g-3">
+            <div class="col-md-6">
+                <input type="file" name="file" accept=".csv" required class="form-control">
+            </div>
+            <div class="col-md-2">
+                <input type="submit" value="Upload CSV" class="btn btn-secondary w-100">
+            </div>
+        </form>
+    </div>
 
     <hr>
 
+    <!-- Download Links -->
+    <div class="mb-3">
+        <h5>📥 Download Stock</h5>
+        <p>
+            <a href="{{ url_for('download_stock', clinic=clinic, filetype='csv') }}">CSV</a> |
+            <a href="{{ url_for('download_stock', clinic=clinic, filetype='excel') }}">Excel</a>
+        </p>
+    </div>
+
     <!-- Stock Table -->
-    <h2>Current Stock for {{ clinic }} Clinic</h2>
-    <p>
-        Download:
-        <a href="{{ url_for('download_stock', clinic=clinic, filetype='csv') }}">CSV</a> |
-        <a href="{{ url_for('download_stock', clinic=clinic, filetype='excel') }}">Excel</a>
-    </p>
-    <table border="1">
-        <tr>
-            <th>Name</th>
-            <th>Quantity</th>
-            {% if session['user'] == 'admin' %}
-                <th>Update</th>
-                <th>Delete</th>
-            {% endif %}
-        </tr>
-        {% for item in stock %}
-        <tr {% if item['Quantity']|int <= 10 %} style="background-color: #ffe6e6;" {% endif %}>
-            <td>{{ item['Name'] }}</td>
-            <td>{{ item['Quantity'] }}</td>
-            {% if session['user'] == 'admin' %}
-            <td>
-                <form method="POST" action="{{ url_for('update', clinic=clinic, name=item['Name']) }}">
-                    <input type="number" name="quantity" value="{{ item['Quantity'] }}" required style="color: black; background-color: #f0f0f0; padding: 5px;">
-                    <input type="submit" value="Update">
-                </form>
-            </td>
-            <td>
-                <a href="{{ url_for('delete', clinic=clinic, name=item['Name']|urlencode) }}">Delete</a>
-            </td>
-            {% endif %}
-        </tr>
-        {% endfor %}
-    </table>
+    <div class="table-responsive">
+        <h5>📋 Current Stock - {{ clinic }} Clinic</h5>
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Quantity</th>
+                    {% if session['user'] == 'admin' %}
+                        <th>Update</th>
+                        <th>Delete</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in stock %}
+                <tr class="{% if item['Quantity']|int <= 10 %}low-stock{% endif %}">
+                    <td>{{ item['Name'] }}</td>
+                    <td>{{ item['Quantity'] }}</td>
+                    {% if session['user'] == 'admin' %}
+                    <td>
+                        <form method="POST" action="{{ url_for('update', clinic=clinic, name=item['Name']) }}" class="d-flex">
+                            <input type="number" name="quantity" value="{{ item['Quantity'] }}" required class="form-control me-2">
+                            <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                        </form>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('delete', clinic=clinic, name=item['Name']|urlencode) }}" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 </body>
 </html>
