@@ -103,7 +103,12 @@
                 {% for item in stock %}
                 <tr class="{% if item['Quantity']|int <= 10 %}low-stock{% endif %}">
                     <td>{{ item['Name'] }}</td>
-                    <td>{{ item['Quantity'] }}</td>
+                    <td>
+                        {{ item['Quantity'] }}
+                        {% if item['Quantity']|int <= 10 %}
+                            <span title="Low Stock!" style="color: #721c24; font-weight: bold;">⚠️</span>
+                        {% endif %}
+                    </td>
                     {% if session['user'] == 'admin' %}
                     <td>
                         <form method="POST" action="{{ url_for('update', clinic=clinic, name=item['Name']) }}" class="d-flex">
