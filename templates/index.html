@@ -79,12 +79,21 @@
     <!-- Download Links -->
     <div class="mb-3">
         <h5>📥 Download Stock</h5>
-        <p>
-            <a href="{{ url_for('download_stock', clinic=clinic, filetype='csv') }}">CSV</a> |
-            <a href="{{ url_for('download_stock', clinic=clinic, filetype='excel') }}">Excel</a>
-        </p>
+        <div class="btn-group">
+            <a href="{{ url_for('download_stock', clinic=clinic, filetype='csv') }}" class="btn btn-success btn-sm">⬇ CSV</a>
+            <a href="{{ url_for('download_stock', clinic=clinic, filetype='excel') }}" class="btn btn-success btn-sm">⬇ Excel</a>
+        </div>
     </div>
 
+    <!-- 🔹 Predicted Requisition Links -->
+    <div class="mb-3">
+        <h5>📊 Download Predicted Requisition (Last 3 Months)</h5>
+        <div class="btn-group">
+            <a href="{{ url_for('predict_requisition', clinic=clinic, filetype='csv') }}" class="btn btn-warning btn-sm">📄 CSV</a>
+            <a href="{{ url_for('predict_requisition', clinic=clinic, filetype='excel') }}" class="btn btn-warning btn-sm">📄 Excel</a>
+        </div>
+    </div>
+    
     <!-- Stock Table -->
     <div class="table-responsive">
         <h5>📋 Current Stock - {{ clinic }} Clinic</h5>

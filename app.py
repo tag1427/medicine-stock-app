@@ -7,6 +7,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 from urllib.parse import unquote
 import pandas as pd
+from dateutil.relativedelta import relativedelta  # <-- NEW IMPORT
 
 app = Flask(__name__)
 app.secret_key = '515253'  # Any random string
@@ -76,12 +77,9 @@ def index():
 
     clinic = request.args.get('clinic', 'Boys')
     stock = get_stock(clinic)
-
-    # ✅ Safe sort: Works even if Name is a number or missing
     stock.sort(key=lambda x: str(x['Name']).lower() if x['Name'] else "")
-
     return render_template('index.html', stock=stock, clinic=clinic)
-    
+
 @app.route('/add', methods=['POST'])
 def add():
     clinic = request.form['clinic']
@@ -141,7 +139,7 @@ def dispatch():
         med_name = request.form['med_name']
         count = int(request.form['count'])
 
-        stock = get_stock(clinic)  # Refresh stock
+        stock = get_stock(clinic)
         item = next((i for i in stock if i['Name'].strip().lower() == med_name.strip().lower()), None)
 
         if item is None:
@@ -168,7 +166,6 @@ def delete_dispatch(clinic, index):
     sheet = get_dispatch_sheet(clinic)
     data = sheet.get_all_values()
     row = data[index + 1]
-    tr_no = row[0]
     med_name = row[1]
     count = int(row[2])
 
@@ -213,23 +210,13 @@ def download_stock(clinic, filetype):
         output = io.StringIO()
         df.to_csv(output, index=False)
         output.seek(0)
-        return send_file(
-            io.BytesIO(output.getvalue().encode()),
-            mimetype='text/csv',
-            as_attachment=True,
-            download_name=f'{clinic}_stock.csv'
-        )
+        return send_file(io.BytesIO(output.getvalue().encode()), mimetype='text/csv', as_attachment=True, download_name=f'{clinic}_stock.csv')
     elif filetype == 'excel':
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name=f"{clinic} Stock")
         output.seek(0)
-        return send_file(
-            output,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            as_attachment=True,
-            download_name=f'{clinic}_stock.xlsx'
-        )
+        return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name=f'{clinic}_stock.xlsx')
 
 @app.route('/download_dispatch/<clinic>/<filetype>')
 def download_dispatch(clinic, filetype):
@@ -240,23 +227,13 @@ def download_dispatch(clinic, filetype):
         output = io.StringIO()
         df.to_csv(output, index=False)
         output.seek(0)
-        return send_file(
-            io.BytesIO(output.getvalue().encode()),
-            mimetype='text/csv',
-            as_attachment=True,
-            download_name=f'{clinic}_dispatch.csv'
-        )
+        return send_file(io.BytesIO(output.getvalue().encode()), mimetype='text/csv', as_attachment=True, download_name=f'{clinic}_dispatch.csv')
     elif filetype == 'excel':
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name=f"{clinic} Dispatch")
         output.seek(0)
-        return send_file(
-            output,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            as_attachment=True,
-            download_name=f'{clinic}_dispatch.xlsx'
-        )
+        return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name=f'{clinic}_dispatch.xlsx')
 
 @app.route('/monthly_report/<clinic>/<filetype>')
 def monthly_report(clinic, filetype):
@@ -277,7 +254,6 @@ def monthly_report(clinic, filetype):
         response.headers["Content-Disposition"] = f"attachment; filename={clinic}_monthly_report.csv"
         response.headers["Content-Type"] = "text/csv"
         return response
-
     elif filetype == 'excel':
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -286,7 +262,6 @@ def monthly_report(clinic, filetype):
         response.headers["Content-Disposition"] = f"attachment; filename={clinic}_monthly_report.xlsx"
         response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         return response
-
     else:
         return "Invalid file type", 400
 
@@ -320,6 +295,49 @@ def upload_stock():
         return redirect(url_for('index', clinic=clinic))
 
     return render_template('upload_stock.html')
+
+
+# 🔹 NEW AI REQUISITION PREDICTION ROUTE
+@app.route('/predict_requisition/<clinic>/<filetype>')
+def predict_requisition(clinic, filetype):
+    dispatch_log = get_dispatch_log(clinic)
+    stock_data = get_stock(clinic)
+
+    df = pd.DataFrame(dispatch_log)
+    if not {'Medicine Name', 'Count', 'Timestamp'}.issubset(df.columns):
+        return "Dispatch log is missing required columns", 500
+
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+    df = df.dropna(subset=['Timestamp'])
+
+    cutoff_date = datetime.now() - relativedelta(months=3)
+    df = df[df['Timestamp'] >= cutoff_date]
+
+    monthly_avg = df.groupby('Medicine Name')['Count'].sum() / 3
+    monthly_avg = monthly_avg.reset_index()
+    monthly_avg.columns = ['Medicine Name', 'Avg Monthly Usage']
+
+    stock_df = pd.DataFrame(stock_data)
+    merged = pd.merge(monthly_avg, stock_df, how='left', left_on='Medicine Name', right_on='Name')
+    merged['Quantity'] = merged['Quantity'].fillna(0).astype(int)
+    merged['Suggested Order'] = (merged['Avg Monthly Usage'] - merged['Quantity']).apply(lambda x: max(int(round(x)), 0))
+
+    result = merged[['Medicine Name', 'Avg Monthly Usage', 'Quantity', 'Suggested Order']]
+
+    if filetype == 'csv':
+        output = io.StringIO()
+        result.to_csv(output, index=False)
+        output.seek(0)
+        return send_file(io.BytesIO(output.getvalue().encode()), mimetype='text/csv', as_attachment=True, download_name=f'{clinic}_predicted_requisition.csv')
+    elif filetype == 'excel':
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            result.to_excel(writer, index=False, sheet_name='Predicted Requisition')
+        output.seek(0)
+        return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name=f'{clinic}_predicted_requisition.xlsx')
+    else:
+        return "Invalid file type", 400
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
