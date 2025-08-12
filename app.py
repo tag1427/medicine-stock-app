@@ -76,9 +76,12 @@ def index():
 
     clinic = request.args.get('clinic', 'Boys')
     stock = get_stock(clinic)
-    stock.sort(key=lambda x: x['Name'].lower())  # ✅ Sort alphabetically by name
-    return render_template('index.html', stock=stock, clinic=clinic)
 
+    # ✅ Safe sort: Works even if Name is a number or missing
+    stock.sort(key=lambda x: str(x['Name']).lower() if x['Name'] else "")
+
+    return render_template('index.html', stock=stock, clinic=clinic)
+    
 @app.route('/add', methods=['POST'])
 def add():
     clinic = request.form['clinic']
